@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>মেটেরিয়াল চার্জ ক্যালকুলেটর (PPBS2 / BREB)</title>
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div class="wrap">
+
+  <header class="hero no-print">
+    <div>
+      <h1>মেটেরিয়াল চার্জ ক্যালকুলেটর</h1>
+      <p>PPBS2 / BREB রেট অনুযায়ী উপকরণ নির্বাচন ও চার্জ হিসাব — সম্পূর্ণ অফলাইন</p>
+    </div>
+    <div class="badge" id="itemCount">0 আইটেম</div>
+  </header>
+
+  <div class="print-only" id="printHead"></div>
+
+  <section class="card no-print">
+    <div class="row">
+      <div class="field" style="width:170px">
+        <label>রেট সোর্স</label>
+        <select id="priceMode">
+          <option value="ppbs2">PPBS2 Price</option>
+          <option value="breb">BREB Price</option>
+          <option value="min">সর্বনিম্ন (Min)</option>
+          <option value="max">সর্বোচ্চ (Max)</option>
+          <option value="avg">গড় (Average)</option>
+        </select>
+      </div>
+      <div class="field grow">
+        <label>আইটেম খুঁজুন (কোড বা নাম)</label>
+        <input id="search" placeholder="যেমন: B-1 / insulator / bolt / transformer ..." autocomplete="off">
+        <div class="suggest" id="suggest"></div>
+      </div>
+      <div class="field" style="width:110px">
+        <label>পরিমাণ</label>
+        <input id="qty" type="number" value="1" min="0" step="1">
+      </div>
+      <div class="field">
+        <button class="btn primary" id="addBtn">যোগ করুন</button>
+      </div>
+    </div>
+    <div class="hint">টিপস: ↑ ↓ দিয়ে বাছাই করুন, <b>Enter</b> চাপুন আইটেম যোগ করতে। টেবিলে একক দর ও পরিমাণ সরাসরি বদলানো যাবে।</div>
+  </section>
+
+  <section class="card no-print">
+    <details>
+      <summary>➕ তালিকায় নেই এমন আইটেম ম্যানুয়ালি যোগ করুন</summary>
+      <div class="row" style="margin-top:12px">
+        <div class="field" style="width:130px">
+          <label>কোড</label>
+          <input id="mCode" placeholder="যেমন: M-1">
+        </div>
+        <div class="field grow">
+          <label>বিবরণ</label>
+          <input id="mDesc" placeholder="আইটেমের নাম / স্পেসিফিকেশন">
+        </div>
+        <div class="field" style="width:130px">
+          <label>একক দর</label>
+          <input id="mPrice" type="number" step="0.01" value="0">
+        </div>
+        <div class="field">
+          <button class="btn" id="mAdd">যোগ করুন</button>
+        </div>
+      </div>
+    </details>
+  </section>
+
+  <section class="card">
+    <div class="card-head">
+      <h2>উপকরণের তালিকা</h2>
+      <div class="actions no-print">
+        <button class="btn ghost" id="clearBtn">সব মুছুন</button>
+        <button class="btn" id="csvBtn">CSV ডাউনলোড</button>
+        <button class="btn primary" id="printBtn">প্রিন্ট / PDF</button>
+      </div>
+    </div>
+    <div class="tablewrap">
+      <table id="itemTable">
+        <thead>
+          <tr>
+            <th style="width:44px">ক্রম</th>
+            <th style="width:92px">কোড</th>
+            <th>বিবরণ</th>
+            <th class="num" style="width:120px">একক দর (৳)</th>
+            <th class="num" style="width:92px">পরিমাণ</th>
+            <th class="num" style="width:130px">মোট (৳)</th>
+            <th class="no-print" style="width:44px"></th>
+          </tr>
+        </thead>
+        <tbody id="tbody"></tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">সর্বমোট উপকরণ</td>
+            <td class="num"></td>
+            <td class="num" id="ftQty">0</td>
+            <td class="num" id="ftAmt">0.00</td>
+            <td class="no-print"></td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+    <div class="empty" id="emptyMsg">এখনও কোনো আইটেম যোগ করা হয়নি। উপরের সার্চ বক্স থেকে আইটেম বেছে নিন।</div>
+  </section>
+
+  <div class="grid2">
+    <section class="card">
+      <div class="card-head"><h2>ক্যাটাগরি অনুযায়ী সারাংশ</h2></div>
+      <table class="sumtable" id="sumTable">
+        <tbody><tr><td class="muted">—</td><td>—</td></tr></tbody>
+      </table>
+      <div class="note">কোডের প্রথম অক্ষর অনুযায়ী গ্রুপ করা হয়েছে (B = হার্ডওয়্যার, C = ইনসুলেটর, D = কন্ডাক্টর, R = পোল ইত্যাদি)।</div>
+    </section>
+
+    <section class="card">
+      <div class="card-head"><h2>চার্জ হিসাব</h2></div>
+      <div class="trow"><span>উপকরণ সাব-টোটাল</span><b id="tSub">0.00</b></div>
+      <div class="trow"><span>ডিসকাউন্ট (%)</span><input id="disc" type="number" value="0" step="0.01" min="0"></div>
+      <div class="trow"><span>ডিসকাউন্ট টাকা</span><b id="tDisc">0.00</b></div>
+      <div class="trow"><span>পরিবহন / অন্যান্য</span><input id="transport" type="number" value="0" step="0.01" min="0"></div>
+      <div class="trow"><span>লেবার চার্জ</span><input id="labour" type="number" value="0" step="0.01" min="0"></div>
+      <div class="trow"><span>ভ্যাট / ট্যাক্স (%)</span><input id="vat" type="number" value="0" step="0.01" min="0"></div>
+      <div class="trow"><span>ভ্যাট টাকা</span><b id="tVat">0.00</b></div>
+      <div class="trow grand"><span>সর্বমোট payable</span><b id="tGrand">0.00</b></div>
+      <div class="note">ভ্যাট হিসাব হয়: (সাব-টোটাল − ডিসকাউন্ট + পরিবহন + লেবার) এর উপর।</div>
+    </section>
+  </div>
+
+  <div class="note no-print" style="text-align:center">
+    রেট সূত্র: <b>Material Dashboard (PPBS2 / BREB Price)</b> · দর ০.০০ মানে ঐ আইটেমের দর তালিকায় নেই — সেক্ষেত্রে ঘরটি সম্পাদনা করে নিজের দর বসাতে পারবেন।
+  </div>
+</div>
+
+<script src="js/data.js"></script>
+<script src="js/config.js"></script>
+<script src="js/state.js"></script>
+<script src="js/storage.js"><script>
+<script src="js/cart.js"></script>
+<script src="js/search.js"></script>
+<script src="js/manual.js"></script>
+<script src="js/events.js"></script>
+<script src="js/controls.js"></script>
+<script src="js/main.js"></script>
+</body>
+</html>
